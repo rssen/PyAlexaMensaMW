@@ -26,6 +26,6 @@ jobs:
         pip install black mypy pylint
     - name: Static Analysis
       run:
-        black -l 100 --check handlers
-        pylint handlers
-        mypy handlers
+        black -l 100 --check handler
+        pylint handler
+        mypy handler
