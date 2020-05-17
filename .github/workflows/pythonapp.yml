@@ -25,7 +25,7 @@ jobs:
         python -m pip install --upgrade pip
         pip install black mypy pylint
     - name: Static Analysis
-      run:
+      run: |
         black -l 100 --check handler
         pylint handler
         mypy handler
