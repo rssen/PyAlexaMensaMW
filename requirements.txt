@@ -1,2 +1,5 @@
 ask-sdk
 untangle
+mypy
+black
+pylint
