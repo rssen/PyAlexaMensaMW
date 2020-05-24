@@ -1,6 +1,7 @@
 from untangle import parse
 from typing import Sequence, Tuple, Union, Mapping, List
 from datetime import date
+from pprint import pprint
 
 
 def parse_xml() -> Sequence["Dish"]:
@@ -10,8 +11,47 @@ def parse_xml() -> Sequence["Dish"]:
     doc = parse("https://app.hs-mittweida.de/speiseplan/all")
     days = doc.response.menus.day
 
-    print(days)
-    print("Robin's Mama ist cool!")
+    for day in doc.response.menus.day:
+        date = day.date.cdata
+        for menu in day.menu:
+            category = menu.type.cdata
+            description = menu.description.cdata
+            price_category = menu.pc.cdata
+            available = menu.available.cdata
+            additives = tuple(menu.additives.cdata.split(","))
+            ingredients = {
+                "alcohol": menu.alcohol.cdata,
+                "pork": menu.pork.cdata,
+                "vital": menu.vital.cdata,
+                "beef": menu.beef.cdata,
+                "bio": menu.bio.cdata,
+                "birds": menu.birds.cdata,
+                "fish": menu.fish.cdata,
+                "garlic": menu.garlic.cdata,
+                "lamb": menu.lamb.cdata,
+                "vegan": menu.vegan.cdata,
+                "vegetarian": menu.vegetarian.cdata,
+                "venison": menu.venison.cdata,
+            }
+            prices = []
+            for price in menu.prices.price:
+                prices.append(
+                    Dish.Price(price.category.cdata, price.value.cdata, price.label.cdata)
+                )
+            # data prepared, create dish object, add object to dishes list
+            dishes.append(
+                Dish(
+                    date,
+                    category,
+                    description,
+                    price_category,
+                    available,
+                    ingredients,
+                    additives,
+                    prices,
+                )
+            )
+
     return dishes
 
 
@@ -44,4 +84,7 @@ class Dish:
 
 
 if __name__ == "__main__":
-    parse_xml()
+    dishes = parse_xml()
+    # import pprint
+    for dish in dishes:
+        pprint(vars(dish))
