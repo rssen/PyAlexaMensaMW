@@ -1,10 +1,11 @@
+from dataclasses import dataclass
 from typing import Sequence, Tuple, Mapping, List, Dict
 from datetime import date
-from pprint import pprint
+from xml.sax import SAXParseException
 from untangle import parse
 
 
-def parse_xml() -> Sequence["Dish"]:
+def parse_xml(url: str) -> Sequence["Dish"]:
     ingredients = [
         "alcohol",
         "pork",
@@ -20,8 +21,12 @@ def parse_xml() -> Sequence["Dish"]:
         "venison",
     ]
 
-    dishes: List["Dish"] = []  # empty list, add dishes
-    doc = parse("https://app.hs-mittweida.de/speiseplan/all")
+    dishes: List[Dish] = []
+    try:
+        doc = parse(url)
+    except (AttributeError, ValueError, SAXParseException) as e:
+        raise AttributeError(f"could not parse url {url}: {e}")
+
     for day in doc.response.menus.day:
         for menu in day.menu:
             k: Dict[str, str] = {
@@ -37,9 +42,13 @@ def parse_xml() -> Sequence["Dish"]:
                     k.get("pc", ""),
                     k.get("available") == "true",
                     {key: (val == "true") for (key, val) in k.items() if key in ingredients},
-                    tuple(k.get("additives").split(",")),
+                    tuple(k.get("additives", "").split(",")),  # type: ignore
                     [
-                        Dish.Price(price.category.cdata, price.value.cdata, price.label.cdata)
+                        Dish.Price(
+                            price.category.cdata,
+                            float((price.value.cdata).replace(",", ".")),
+                            price.label.cdata,
+                        )
                         for price in menu.prices.price
                     ],
                 )
@@ -47,39 +56,20 @@ def parse_xml() -> Sequence["Dish"]:
     return dishes
 
 
+@dataclass
 class Dish:
     # pylint: disable=too-many-instance-attributes
-    # pylint: disable=too-many-arguments
+    day: date
+    category: str
+    description: str
+    price_category: str
+    available: bool
+    ingredients: Mapping[str, bool]
+    additives: Tuple[str]
+    prices: Sequence["Dish.Price"]
 
-    def __init__(
-        self,
-        day: date,
-        category: str,
-        description: str,
-        price_category: str,
-        available: bool,
-        ingredients: Mapping[str, bool],
-        additives: Tuple[str],
-        prices: Sequence["Dish.Price"],
-    ):
-        self._day = day
-        self._category = category
-        self._description = description
-        self._price_category = price_category
-        self._available = available
-        self._ingredients = ingredients
-        self._additives = additives
-        self._prices = prices
-
+    @dataclass
     class Price:
-        def __init__(self, category: str, value: float, label: str):
-            self.category = category
-            self.value = value
-            self.label = label
-
-
-if __name__ == "__main__":
-    d = parse_xml()
-    for dish in d:
-        pprint(vars(dish))
-    print(len(d))
+        category: str
+        value: float
+        label: str
