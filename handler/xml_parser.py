@@ -1,70 +1,65 @@
-from untangle import parse
-from typing import Sequence, Tuple, Union, Mapping, List
+from typing import Sequence, Tuple, Mapping, List, Dict
 from datetime import date
 from pprint import pprint
+from untangle import parse
 
 
 def parse_xml() -> Sequence["Dish"]:
+    ingredients = [
+        "alcohol",
+        "pork",
+        "vital",
+        "beef",
+        "bio",
+        "birds",
+        "fish",
+        "garlic",
+        "lamb",
+        "vegan",
+        "vegetarian",
+        "venison",
+    ]
 
     dishes: List["Dish"] = []  # empty list, add dishes
-
     doc = parse("https://app.hs-mittweida.de/speiseplan/all")
-    days = doc.response.menus.day
-
     for day in doc.response.menus.day:
-        date = day.date.cdata
         for menu in day.menu:
-            category = menu.type.cdata
-            description = menu.description.cdata
-            price_category = menu.pc.cdata
-            available = menu.available.cdata
-            additives = tuple(menu.additives.cdata.split(","))
-            ingredients = {
-                "alcohol": menu.alcohol.cdata,
-                "pork": menu.pork.cdata,
-                "vital": menu.vital.cdata,
-                "beef": menu.beef.cdata,
-                "bio": menu.bio.cdata,
-                "birds": menu.birds.cdata,
-                "fish": menu.fish.cdata,
-                "garlic": menu.garlic.cdata,
-                "lamb": menu.lamb.cdata,
-                "vegan": menu.vegan.cdata,
-                "vegetarian": menu.vegetarian.cdata,
-                "venison": menu.venison.cdata,
+            k: Dict[str, str] = {
+                name: menu.get_elements(name)[0].cdata
+                for name in dir(menu)
+                if name not in ["prices"]
             }
-            prices = []
-            for price in menu.prices.price:
-                prices.append(
-                    Dish.Price(price.category.cdata, price.value.cdata, price.label.cdata)
-                )
-            # data prepared, create dish object, add object to dishes list
             dishes.append(
                 Dish(
-                    date,
-                    category,
-                    description,
-                    price_category,
-                    available,
-                    ingredients,
-                    additives,
-                    prices,
+                    day.date.cdata,
+                    k.get("type", ""),
+                    k.get("description", ""),
+                    k.get("pc", ""),
+                    k.get("available") == "true",
+                    {key: (val == "true") for (key, val) in k.items() if key in ingredients},
+                    tuple(k.get("additives").split(",")),
+                    [
+                        Dish.Price(price.category.cdata, price.value.cdata, price.label.cdata)
+                        for price in menu.prices.price
+                    ],
                 )
             )
-
     return dishes
 
 
 class Dish:
+    # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-arguments
+
     def __init__(
         self,
         day: date,
         category: str,
         description: str,
-        price_category: int,
+        price_category: str,
         available: bool,
         ingredients: Mapping[str, bool],
-        additives: Tuple[Union[str, int]],
+        additives: Tuple[str],
         prices: Sequence["Dish.Price"],
     ):
         self._day = day
@@ -84,7 +79,7 @@ class Dish:
 
 
 if __name__ == "__main__":
-    dishes = parse_xml()
-    # import pprint
-    for dish in dishes:
+    d = parse_xml()
+    for dish in d:
         pprint(vars(dish))
+    print(len(d))
