@@ -1,17 +1,19 @@
 from datetime import datetime
+from typing import Callable
 
 from ask_sdk_core import handler_input
 from ask_sdk_core.handler_input import HandlerInput
+from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model import Response
 from ask_sdk_model.ui import SimpleCard
-from ask_sdk_runtime.dispatch_components import AbstractExceptionHandler, AbstractRequestHandler
+from ask_sdk_runtime.dispatch_components import AbstractRequestHandler
 
 from handler.base_builder import sb
 
 
-@sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
-def launch_request_handler(handler_input: HandlerInput) -> Response:
+class LaunchRequestHandler(AbstractRequestHandler):
+    @staticmethod
     def get_greeting() -> str:
         current_hour = datetime.now().time().hour
         if current_hour <= 4 or current_hour >= 21:
@@ -22,28 +24,35 @@ def launch_request_handler(handler_input: HandlerInput) -> Response:
             return "Guten Tag."
         return "Guten Abend"
 
-    greeting = (
-        f" {get_greeting} Möchtest du wissen, was es in der Mensa Mittweida gibt?"
-        " Sage dazu zum Beispiel: Was gibt es am Montag in der Mensa."
-        " Wenn du weitere Hilfe brauchst sage: Hilfe"
-    )
-    handler_input.response_builder.speak(greeting).set_card(SimpleCard("Wilkommen", greeting))
+    def can_handle(self, handler_input: HandlerInput) -> bool:
+        return is_request_type("LaunchRequest")(handler_input)
 
-    return handler_input.response_builder.response
+    def handle(self, handler_input: HandlerInput) -> Response:
+        greeting = (
+            f" {self.get_greeting} Möchtest du wissen, was es in der Mensa Mittweida gibt?"
+            " Sage dazu zum Beispiel: Was gibt es am Montag in der Mensa."
+            " Wenn du weitere Hilfe brauchst sage: Hilfe"
+        )
+        handler_input.response_builder.speak(greeting).set_card(SimpleCard("Wilkommen", greeting))
+        return handler_input.response_builder.response
 
 
-@sb.request_handler(can_handle_func=is_intent_name("Amazon.HelpIntent"))
-def help_intent_handler(handler_input: HandlerInput) -> Response:
-    help_message = (
-        "Wenn du wissen möchtest, welche Gerichte es an einem bestimmten Tag gibt, "
-        "sage z.B. was gibt es am Montag. Wenn du ein bestimmtes Gericht wissen "
-        "möchtest, sage: Was ist der Campusteller am Dienstag. Interessieren dich "
-        "die Zusatzstoffe, kannst du mich fragen: Welche Zusatzstoffe hat der "
-        "Campusteller am Dienstag zum beenden sage: beenden"
-    )
-    handler_input.response_builder.speak(help_message).set_card(SimpleCard("Hilfe", help_message))
-    return handler_input.response_builder.response
+class HelpIntentHandler(AbstractRequestHandler):
+    def can_handle(self, handler_input: HandlerInput) -> bool:
+        return is_intent_name("Amazon.HelpIntent")(handler_input)
 
+    def handle(self, handler_input: HandlerInput) -> Response:
+        help_message = (
+            "Wenn du wissen möchtest, welche Gerichte es an einem bestimmten Tag gibt, "
+            "sage z.B. was gibt es am Montag. Wenn du ein bestimmtes Gericht wissen "
+            "möchtest, sage: Was ist der Campusteller am Dienstag. Interessieren dich "
+            "die Zusatzstoffe, kannst du mich fragen: Welche Zusatzstoffe hat der "
+            "Campusteller am Dienstag zum beenden sage: beenden"
+        )
+        handler_input.response_builder.speak(help_message).set_card(
+            SimpleCard("Hilfe", help_message)
+        )
+        return handler_input.response_builder.response
 
 class ExitIntentHandler(AbstractRequestHandler):
     """Single Handler for Cancel, Stop intents."""
@@ -86,3 +95,4 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
         speech = "Ich habe leider nicht verstanden, was du gesagt hast."
         handler_input.response_builder.speak(speech).ask(speech)
         return handler_input.response_builder.response
+
