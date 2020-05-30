@@ -5,8 +5,7 @@ from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model import Response
 from ask_sdk_model.ui import SimpleCard
-
-sb = SkillBuilder()
+from handler.base_builder import sb
 
 
 @sb.request_handler(can_handle_func=is_request_type("LaunchRequest"))
@@ -67,3 +66,4 @@ def all_exception_handler(handler_input: HandlerInput, exception: Exception) -> 
     speech = "Ich habe leider nicht verstanden, was du gesagt hast."
     handler_input.response_builder.speak(speech).ask(speech)
     return handler_input.response_builder.response
+
