@@ -1,10 +1,12 @@
 from datetime import datetime
 
+from ask_sdk_core import handler_input
 from ask_sdk_core.handler_input import HandlerInput
-from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import is_request_type, is_intent_name
 from ask_sdk_model import Response
 from ask_sdk_model.ui import SimpleCard
+from ask_sdk_runtime.dispatch_components import AbstractExceptionHandler, AbstractRequestHandler
+
 from handler.base_builder import sb
 
 
@@ -43,27 +45,44 @@ def help_intent_handler(handler_input: HandlerInput) -> Response:
     return handler_input.response_builder.response
 
 
-@sb.request_handler(
-    can_handle_func=lambda handler_input: is_intent_name("AMAZON.CancelIntent")(handler_input)
-    or is_intent_name("AMAZON.StopIntent")(handler_input)
-)  # type: ignore
-def cancel_and_stop_intent_handler(handler_input: HandlerInput) -> Response:
-    return (
-        handler_input.response_builder.speak("Auf Wiedersehen")
-        .set_card(SimpleCard("Auf Wiedersehen"))
-        .response
-    )
+class ExitIntentHandler(AbstractRequestHandler):
+    """Single Handler for Cancel, Stop intents."""
+    def can_handle(self, handler_input: HandlerInput) -> bool:
+        return (is_intent_name("AMAZON.CancelIntent")(handler_input) or
+                is_intent_name("AMAZON.StopIntent")(handler_input))
+
+    def handle(self, hanler_input: HandlerInput) -> Response:
+        print("In ExitIntentHandler")
+        return (
+            handler_input.response_builder.speak("Auf Wiedersehen")
+            .set_card(SimpleCard("Auf Wiedersehen"))
+            .response
+        )
 
 
-@sb.request_handler(can_handle_func=is_request_type("SessionEndedRequest"))
-def session_ended_request_handler(handler_input: HandlerInput) -> Response:
-    return handler_input.response_builder.response
+class SessionEndedRequestHandler(AbstractRequestHandler):
+    """Handler for skill session end."""
+
+    def can_handle(self, handler_input: HandlerInput) -> bool:
+        return is_request_type("SessionEndedRequest")(handler_input)
+
+    def handle(self, handler_input: HandlerInput) -> Response:
+        print("In SessionEndedRequestHandler")
+        print("Session ended with reason: {}".format(
+            handler_input.request_envelope.request.reason))
+        return handler_input.response_builder.response
 
 
-@sb.exception_handler(can_handle_func=lambda i, e: True)  # type: ignore
-def all_exception_handler(handler_input: HandlerInput, exception: Exception) -> Response:
-    print(exception)
-    speech = "Ich habe leider nicht verstanden, was du gesagt hast."
-    handler_input.response_builder.speak(speech).ask(speech)
-    return handler_input.response_builder.response
+class CatchAllExceptionHandler(AbstractExceptionHandler):
+    """Catch All Exception handler.
+    This handler catches all kinds of exceptions and prints
+    the stack trace on AWS Cloudwatch with the request envelope."""
 
+    def can_handle(selfself, handler_input: HandlerInput, exception: Exception) -> bool:
+        return True
+
+    def handle(selfself, handler_input: HandlerInput, exception: Exception) -> Response:
+        print(exception)
+        speech = "Ich habe leider nicht verstanden, was du gesagt hast."
+        handler_input.response_builder.speak(speech).ask(speech)
+        return handler_input.response_builder.response
