@@ -15,4 +15,4 @@ sb.add_request_handler(LaunchRequestHandler())
 
 sb.add_exception_handler(CatchAllExceptionHandler())
 
-lambda_handler = sb.lambda_handler()
+handler = sb.lambda_handler()

@@ -23,7 +23,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
 
     def handle(self, handler_input: HandlerInput) -> Response:
         greeting = (
-            f" {self.get_greeting} Möchtest du wissen, was es in der Mensa Mittweida gibt?"
+            f" {self.get_greeting()} Möchtest du wissen, was es in der Mensa Mittweida gibt?"
             " Sage dazu zum Beispiel: Was gibt es am Montag in der Mensa."
             " Wenn du weitere Hilfe brauchst sage: Hilfe"
         )
