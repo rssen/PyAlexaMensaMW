@@ -6,13 +6,22 @@ from handler.standard_handler import (
     LaunchRequestHandler,
     CatchAllExceptionHandler,
 )
+from handler.custom_handler import (
+    DayIntentHandler
+)
+from handler.xml_parser import parse_xml
 
 sb = SkillBuilder()
 sb.add_request_handler(SessionEndedRequestHandler())
 sb.add_request_handler(ExitIntentHandler())
 sb.add_request_handler(HelpIntentHandler())
 sb.add_request_handler(LaunchRequestHandler())
-
 sb.add_exception_handler(CatchAllExceptionHandler())
+
+# custom handler
+dishes = parse_xml("https://app.hs-mittweida.de/speiseplan/all")
+assert len(dishes) > 0
+assert dishes is not None
+sb.add_request_handler(DayIntentHandler(dishes))
 
 handler = sb.lambda_handler()
