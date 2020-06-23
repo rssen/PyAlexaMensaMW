@@ -1,5 +1,10 @@
 *.pyc
+*.zip
 __pycache__
 build
 dist
 venv
+dependencies
+idea
+.mypy_cache
+.idea
