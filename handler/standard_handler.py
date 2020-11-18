@@ -27,7 +27,7 @@ class LaunchRequestHandler(AbstractRequestHandler):
             " Sage dazu zum Beispiel: Was gibt es am Montag in der Mensa."
             " Wenn du weitere Hilfe brauchst sage: Hilfe"
         )
-        handler_input.response_builder.speak(greeting).set_card(SimpleCard("Wilkommen", greeting))
+        handler_input.response_builder.speak(greeting).set_card(SimpleCard("Willkommen", greeting))
         return handler_input.response_builder.response
 
 

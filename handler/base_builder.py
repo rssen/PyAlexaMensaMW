@@ -6,9 +6,7 @@ from handler.standard_handler import (
     LaunchRequestHandler,
     CatchAllExceptionHandler,
 )
-from handler.custom_handler import (
-    DayIntentHandler
-)
+from handler.custom_handler import DayIntentHandler
 from handler.xml_parser import parse_xml
 
 sb = SkillBuilder()
