@@ -4,17 +4,42 @@ from random import randint
 
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.handler_input import HandlerInput
-from ask_sdk_model import Response
 
 from handler.xml_parser import Dish
 from ask_sdk_core.utils import is_intent_name, get_slot_value
 from ask_sdk_core.skill_builder import SkillBuilder
+from ask_sdk_model import Response
 
 sb = SkillBuilder()
 
 
+# returns the date of the requested day
 def get_requested_day(day_slot: str, is_next_week: bool) -> datetime.date:
-    pass
+    day_of_week = datetime.date.today().weekday()
+    day_name = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
+    today = datetime.date.today()
+
+    if day_slot == "Heute":
+        return today
+    elif day_slot == "Morgen":
+        return today + datetime.timedelta(days=1)  # return date of tomorrow
+    elif day_slot == "Übermorgen":
+        return today + datetime.timedelta(days=2)  # return date of tomorrow
+
+    # day_slot is in Montag, ..., Sonntag
+
+    requested_slot_number = day_name.index(day_slot)
+
+    # requested day is in the next week (e.g. today is Mittwoch and Montag is requested)
+    if (requested_slot_number < day_of_week):
+        is_next_week = True
+
+    if not is_next_week:
+        # return date that is part of the current week
+        return today + datetime.timedelta(days=requested_slot_number - day_of_week)
+    else:
+        # return date that is part of the next week
+        return today + datetime.timedelta(days=7 - day_of_week + day_name.index(day_slot))
 
 
 class ConnectionClause:
@@ -80,17 +105,28 @@ class DayIntentHandler(AbstractRequestHandler):
 
     def handle(self, handler_input: HandlerInput) -> Response:
         # get slot value
-        day_slot = get_slot_value(handler_input=handler_input, slot_name="day").capitalize()
-        print(day_slot)
-        day_name = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
-        day_of_week = datetime.date.today().weekday()
-        try:
-            day_slot_number = day_name.index(day_slot)
-        except Exception as e:
-            print(e)
+        day_slot = get_slot_value(handler_input=handler_input, slot_name="day")
+        is_next_week = get_slot_value(handler_input=handler_input, slot_name="is_next_week")
+        # if next week is not in the requests it is "None"
+        if is_next_week is None:
+            is_next_week = False
 
-        handler_input.response_builder.speak(f"Gewählter Tag: {day_slot}")
+        requested_date = get_requested_day(day_slot.capitalize(), is_next_week)
+
+        # get the dishes at the requested date
+        dishes_at_date = [dish for dish in self.dishes if dish.day == requested_date]
+
+        greeting = (
+            f"Am {requested_date} gibt es: {dishes_at_date}"
+        )
+
+        handler_input.response_builder.speak(greeting)
         return handler_input.response_builder.response
+
+
+    # set dishes - called by base_builder
+    def set_dishes(self, dishes: Sequence[Dish]):
+        self.dishes = dishes
 
 
 class DayAndCategoryIntentHandler(AbstractRequestHandler):
@@ -115,3 +151,7 @@ class DayAndCategoryIntentHandler(AbstractRequestHandler):
 
         handler_input.response_builder.speak(speech_output)
         return handler_input.response_builder.response
+
+    def set_dishes(self, dishes: Sequence[Dish]):
+        self.dishes = dishes
+

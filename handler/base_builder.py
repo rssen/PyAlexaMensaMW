@@ -20,9 +20,9 @@ sb.add_exception_handler(CatchAllExceptionHandler())
 dishes = parse_xml("https://app.hs-mittweida.de/speiseplan/all")
 assert len(dishes) > 0
 assert dishes is not None
-a = DayIntentHandler()
-a.dishes = dishes
-sb.add_request_handler(a)
+day_intent_handler = DayIntentHandler()
+day_intent_handler.set_dishes(dishes)
+sb.add_request_handler(day_intent_handler) # register DayIntentHandler
 
 
 handler = sb.lambda_handler()

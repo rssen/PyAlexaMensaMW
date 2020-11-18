@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Sequence, Tuple, Mapping, List, Dict
-from datetime import date
+from datetime import datetime
 from xml.sax import SAXParseException
 from untangle import parse
 
@@ -36,7 +36,7 @@ def parse_xml(url: str) -> Sequence["Dish"]:
             }
             dishes.append(
                 Dish(
-                    day.date.cdata,
+                    datetime.strptime(day.date.cdata, '%Y-%m-%d').date(),
                     k.get("type", ""),
                     k.get("description", ""),
                     k.get("pc", ""),
@@ -59,7 +59,7 @@ def parse_xml(url: str) -> Sequence["Dish"]:
 @dataclass
 class Dish:
     # pylint: disable=too-many-instance-attributes
-    day: date
+    day: datetime.date
     category: str
     description: str
     price_category: str
