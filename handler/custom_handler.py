@@ -6,9 +6,13 @@ from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.handler_input import HandlerInput
 
 from handler.xml_parser import Dish
-from ask_sdk_core.utils import is_intent_name, get_slot_value
+from ask_sdk_core.utils import (
+    is_intent_name,
+    get_slot_value,
+    get_slot,
+)
 from ask_sdk_core.skill_builder import SkillBuilder
-from ask_sdk_model import Response
+from ask_sdk_model import Response, Slot
 
 sb = SkillBuilder()
 
@@ -16,7 +20,7 @@ sb = SkillBuilder()
 # returns the date of the requested day
 def get_requested_day(day_slot: str, is_next_week: bool) -> datetime.date:
     day_of_week = datetime.date.today().weekday()
-    day_name = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag']
+    day_name = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
     today = datetime.date.today()
 
     if day_slot == "Heute":
@@ -31,7 +35,7 @@ def get_requested_day(day_slot: str, is_next_week: bool) -> datetime.date:
     requested_slot_number = day_name.index(day_slot)
 
     # requested day is in the next week (e.g. today is Mittwoch and Montag is requested)
-    if (requested_slot_number < day_of_week):
+    if requested_slot_number < day_of_week:
         is_next_week = True
 
     if not is_next_week:
@@ -62,9 +66,9 @@ class ConnectionClause:
         dishes_description = [dish.description[: dish.description.index("(")] for dish in dishes]
 
         category_intro = [
-            f" In der Katgorie {category_name} gibt es {str.join(' ', dishes_description)} ",
-            f" Die Kategorie {category_name} hält heute {str.join(' ', dishes_description)} bereit ",
-            f" Bei {category_name} gibt es: {str.join(' ', dishes_description)}",
+            f"In der Katgorie {category_name} gibt es {str.join(' ', dishes_description)} ",
+            f"Die Kategorie {category_name} hält heute {str.join(' ', dishes_description)} bereit ",
+            f"Bei {category_name} gibt es: {str.join(' ', dishes_description)} ",
         ]
 
         speech_output, index = self._get_random_non_repeating_element(
@@ -96,6 +100,29 @@ def get_list_speech_output(dishes: List[Dish]):
     return combined_speech_output
 
 
+def get_resolved_slot_value(slot: Slot, resolution_authority_name: str) -> str:
+
+    slot_resolutions = slot.resolutions
+    if slot_resolutions is None:
+        raise AttributeError("Slot has no resolutions.")
+    for authority in slot_resolutions.resolutions_per_authority:
+        if authority.authority.find(resolution_authority_name) != -1:
+            if len(authority.values) != 1:
+                raise ValueError(
+                    f"Expected one resolution for slot category, got {len(authority.values)}."
+                )
+            resolved_value_wrapper = authority.values[0]
+            resolved_category_value = resolved_value_wrapper.to_dict()["value"]
+            assert isinstance(resolved_category_value, dict)
+            resolved_category = resolved_category_value["name"]
+            assert isinstance(resolved_category, str)
+            break
+    else:
+        raise ValueError(f"Could not find authority {resolution_authority_name}.")
+
+    return resolved_category
+
+
 class DayIntentHandler(AbstractRequestHandler):
 
     dishes: Sequence[Dish]
@@ -105,27 +132,21 @@ class DayIntentHandler(AbstractRequestHandler):
 
     def handle(self, handler_input: HandlerInput) -> Response:
         # get slot value
-        day_slot = get_slot_value(handler_input=handler_input, slot_name="day")
-        is_next_week = get_slot_value(handler_input=handler_input, slot_name="is_next_week")
+        day_slot = get_slot_value(handler_input=handler_input, slot_name="day").capitalize()
         # if next week is not in the requests it is "None"
-        if is_next_week is None:
-            is_next_week = False
-
-        requested_date = get_requested_day(day_slot.capitalize(), is_next_week)
+        next_week_slot = get_slot_value(handler_input=handler_input, slot_name="next_week")
+        is_next_week_slot = next_week_slot is not None
+        requested_date = get_requested_day(day_slot, is_next_week_slot)
 
         # get the dishes at the requested date
         dishes_at_date = [dish for dish in self.dishes if dish.day == requested_date]
+        speech_output = get_list_speech_output(dishes_at_date)
 
-        greeting = (
-            f"Am {requested_date} gibt es: {dishes_at_date}"
-        )
-
-        handler_input.response_builder.speak(greeting)
+        handler_input.response_builder.speak(speech_output)
         return handler_input.response_builder.response
 
-
     # set dishes - called by base_builder
-    def set_dishes(self, dishes: Sequence[Dish]):
+    def set_dishes(self, dishes: Sequence[Dish]) -> None:
         self.dishes = dishes
 
 
@@ -139,14 +160,23 @@ class DayAndCategoryIntentHandler(AbstractRequestHandler):
     def handle(self, handler_input: HandlerInput) -> Response:
         # get slot value
         day_slot = get_slot_value(handler_input=handler_input, slot_name="day").capitalize()
-        is_next_week_slot = (
-            get_slot_value(handler_input=handler_input, slot_name="is_next_week") == "true"
+        next_week_slot: Optional[str] = get_slot_value(
+            handler_input=handler_input, slot_name="next_week"
         )
-        category_slot = get_slot_value(handler_input=handler_input, slot_name="category").lower()
+        is_next_week_slot = next_week_slot is not None
+
+        category_slot = get_slot(handler_input=handler_input, slot_name="category")
+        resolved_category = get_resolved_slot_value(
+            slot=category_slot, resolution_authority_name="KATEGORIE"
+        )
 
         requested_date = get_requested_day(day_slot, is_next_week_slot)
 
-        dishes_for_category_and_date = [dish for dish in self.dishes if dish.day == requested_date]
+        dishes_for_category_and_date = [
+            dish
+            for dish in self.dishes
+            if dish.day == requested_date and dish.category == resolved_category
+        ]
         speech_output = get_list_speech_output(dishes_for_category_and_date)
 
         handler_input.response_builder.speak(speech_output)
@@ -154,4 +184,3 @@ class DayAndCategoryIntentHandler(AbstractRequestHandler):
 
     def set_dishes(self, dishes: Sequence[Dish]):
         self.dishes = dishes
-

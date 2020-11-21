@@ -6,7 +6,7 @@ from handler.standard_handler import (
     LaunchRequestHandler,
     CatchAllExceptionHandler,
 )
-from handler.custom_handler import DayIntentHandler
+from handler.custom_handler import DayIntentHandler, DayAndCategoryIntentHandler
 from handler.xml_parser import parse_xml
 
 sb = SkillBuilder()
@@ -21,8 +21,12 @@ dishes = parse_xml("https://app.hs-mittweida.de/speiseplan/all")
 assert len(dishes) > 0
 assert dishes is not None
 day_intent_handler = DayIntentHandler()
-day_intent_handler.set_dishes(dishes)
-sb.add_request_handler(day_intent_handler) # register DayIntentHandler
+day_and_category_intent_handler = DayAndCategoryIntentHandler()
 
+day_intent_handler.set_dishes(dishes)
+day_and_category_intent_handler.set_dishes(dishes)
+
+sb.add_request_handler(day_intent_handler)
+sb.add_request_handler(day_and_category_intent_handler)
 
 handler = sb.lambda_handler()

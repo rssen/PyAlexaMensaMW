@@ -36,7 +36,7 @@ def parse_xml(url: str) -> Sequence["Dish"]:
             }
             dishes.append(
                 Dish(
-                    datetime.strptime(day.date.cdata, '%Y-%m-%d').date(),
+                    datetime.strptime(day.date.cdata, "%Y-%m-%d").date(),
                     k.get("type", ""),
                     k.get("description", ""),
                     k.get("pc", ""),

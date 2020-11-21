@@ -76,5 +76,5 @@ class CatchAllExceptionHandler(AbstractExceptionHandler):
 
     def handle(self, handler_input: HandlerInput, exception: Exception) -> Response:
         speech = "Ich habe leider nicht verstanden, was du gesagt hast."
-        handler_input.response_builder.speak(speech).ask(speech)
+        handler_input.response_builder.speak("Exception: " + exception.__str__())
         return handler_input.response_builder.response
