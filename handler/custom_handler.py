@@ -4,8 +4,6 @@ from random import randint
 
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.handler_input import HandlerInput
-
-from handler.xml_parser import Dish
 from ask_sdk_core.utils import (
     is_intent_name,
     get_slot_value,
@@ -13,6 +11,7 @@ from ask_sdk_core.utils import (
 )
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_model import Response, Slot
+from handler.xml_parser import Dish
 
 sb = SkillBuilder()
 
@@ -23,27 +22,27 @@ def get_requested_day(day_slot: str, is_next_week: bool) -> datetime.date:
     day_name = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
     today = datetime.date.today()
 
+    requested_day: Optional[datetime.date] = None
     if day_slot == "Heute":
-        return today
+        requested_day = today
     elif day_slot == "Morgen":
-        return today + datetime.timedelta(days=1)  # return date of tomorrow
+        requested_day = today + datetime.timedelta(days=1)
     elif day_slot == "Übermorgen":
-        return today + datetime.timedelta(days=2)  # return date of tomorrow
-
-    # day_slot is in Montag, ..., Sonntag
-
-    requested_slot_number = day_name.index(day_slot)
-
-    # requested day is in the next week (e.g. today is Mittwoch and Montag is requested)
-    if requested_slot_number < day_of_week:
-        is_next_week = True
-
-    if not is_next_week:
-        # return date that is part of the current week
-        return today + datetime.timedelta(days=requested_slot_number - day_of_week)
+        requested_day = today + datetime.timedelta(days=2)
     else:
+        assert day_slot in day_name
+        requested_slot_number = day_name.index(day_slot)
+
+        # requested day is in the next week (e.g. today is Mittwoch and Montag is requested)
         # return date that is part of the next week
-        return today + datetime.timedelta(days=7 - day_of_week + day_name.index(day_slot))
+        if requested_slot_number < day_of_week or is_next_week:
+            requested_day = today + datetime.timedelta(
+                days=7 - day_of_week + day_name.index(day_slot)
+            )
+        else:
+            requested_day = today + datetime.timedelta(days=requested_slot_number - day_of_week)
+
+    return requested_day
 
 
 class ConnectionClause:
@@ -51,14 +50,14 @@ class ConnectionClause:
         self.last_indices: Dict = {}
 
     @staticmethod
-    def _get_random_non_repeating_element(li: List, last_index: Optional[int]):
+    def _get_random_non_repeating_element(elements: List, last_index: Optional[int]):
         if last_index is None:
-            random_index = randint(0, len(li) - 1)
+            random_index = randint(0, len(elements) - 1)
         else:
             random_index = None
             while last_index == random_index or random_index is None:
-                random_index = randint(0, len(li) - 1)
-        random_element = li[random_index]
+                random_index = randint(0, len(elements) - 1)
+        random_element = elements[random_index]
         return random_element, random_index
 
     def get_category_speech_output(self, category_name: str, dishes: List[Dish]) -> str:
@@ -66,7 +65,8 @@ class ConnectionClause:
         dishes_description = [dish.description[: dish.description.index("(")] for dish in dishes]
 
         category_intro = [
-            f"In der Kategorie {category_name} gibt es {str.join(', außerdem gibt es ', dishes_description)}.",
+            f"In der Kategorie {category_name} gibt es "
+            f"{str.join(', außerdem gibt es ', dishes_description)}.",
             f"Die Kategorie {category_name} hält {str.join(' sowie ', dishes_description)} bereit.",
             f"Bei {category_name} gibt es: {str.join(' ', dishes_description)}.",
         ]
@@ -133,16 +133,14 @@ class DayIntentHandler(AbstractRequestHandler):
     dishes: Sequence[Dish]
 
     def can_handle(self, handler_input: HandlerInput) -> bool:
-         return is_intent_name("DayIntent")(handler_input)
+        return is_intent_name("DayIntent")(handler_input)
 
     def handle(self, handler_input: HandlerInput) -> Response:
-        
+
         # get slot value
         day_slot = get_slot(handler_input=handler_input, slot_name="day")
-        resolved_day = get_resolved_slot_value(
-            slot=day_slot, resolution_authority_name="TAG"
-        )
-        
+        resolved_day = get_resolved_slot_value(slot=day_slot, resolution_authority_name="TAG")
+
         next_week_slot: Optional[str] = get_slot_value(
             handler_input=handler_input, slot_name="next_week"
         )
@@ -151,15 +149,14 @@ class DayIntentHandler(AbstractRequestHandler):
         requested_date = get_requested_day(resolved_day, is_next_week_slot)
 
         # get the dishes at the requested date
-        dishes_at_date = [
-            dish
-            for dish in self.dishes
-            if dish.day == requested_date
-        ]
+        dishes_at_date = [dish for dish in self.dishes if dish.day == requested_date]
 
         # if list is empty it must be weekend or a holiday
         if not dishes_at_date:
-            speech_output = f"{resolved_day} gibt es kein Essen in der Mensa. Die Mensa hat am Wochenende und an Feiertagen geschlossen."
+            speech_output = (
+                f"{resolved_day} gibt es kein Essen in der Mensa. "
+                f"Die Mensa hat am Wochenende und an Feiertagen geschlossen."
+            )
         else:
             speech_output = get_list_speech_output(dishes_at_date)
 
@@ -179,12 +176,10 @@ class DayAndCategoryIntentHandler(AbstractRequestHandler):
         return is_intent_name("DayAndCategoryIntent")(handler_input)
 
     def handle(self, handler_input: HandlerInput) -> Response:
-        
+
         # get slot value
         day_slot = get_slot(handler_input=handler_input, slot_name="day")
-        resolved_day = get_resolved_slot_value(
-            slot=day_slot, resolution_authority_name="TAG"
-        )
+        resolved_day = get_resolved_slot_value(slot=day_slot, resolution_authority_name="TAG")
 
         next_week_slot: Optional[str] = get_slot_value(
             handler_input=handler_input, slot_name="next_week"
@@ -205,7 +200,10 @@ class DayAndCategoryIntentHandler(AbstractRequestHandler):
         ]
 
         if not dishes_for_category_and_date:
-            speech_output = f"{resolved_day} gibt es kein Essen in der Mensa. Die Mensa hat am Wochenende und an Feiertagen geschlossen."
+            speech_output = (
+                f"{resolved_day} gibt es kein Essen in der Mensa. "
+                f"Die Mensa hat am Wochenende und an Feiertagen geschlossen."
+            )
         else:
             speech_output = get_list_speech_output(dishes_for_category_and_date)
 
