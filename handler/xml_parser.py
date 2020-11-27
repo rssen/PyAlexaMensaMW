@@ -25,6 +25,7 @@ def parse_xml(url: str) -> Sequence["Dish"]:
     try:
         doc = parse(url)
     except (AttributeError, ValueError, SAXParseException) as e:
+        # pylint: disable=raise-missing-from
         raise AttributeError(f"could not parse url {url}: {e}")
 
     for day in doc.response.menus.day:
