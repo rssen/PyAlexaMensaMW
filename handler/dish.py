@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Sequence, Tuple, Mapping
+from typing import Mapping, Sequence, Tuple
 
 
 @dataclass
