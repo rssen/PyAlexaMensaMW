@@ -6,7 +6,7 @@ from handler.dish import Dish
 from handler.template import template_factory
 
 context = Context()
-templates = template_factory(context.localization.value)
+templates = template_factory(context.localization)
 
 
 def no_dishes_found_at_date(requested_date: date) -> str:
