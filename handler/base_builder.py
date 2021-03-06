@@ -1,13 +1,14 @@
 from ask_sdk_core.skill_builder import SkillBuilder
+
+from handler.context import Context
+from handler.custom_handler import DayIntentHandler
 from handler.standard_handler import (
-    SessionEndedRequestHandler,
+    CatchAllExceptionHandler,
     ExitIntentHandler,
     HelpIntentHandler,
     LaunchRequestHandler,
-    CatchAllExceptionHandler,
+    SessionEndedRequestHandler,
 )
-from handler.custom_handler import DayIntentHandler, DayAndCategoryIntentHandler
-from handler.xml_parser import parse_xml
 
 sb = SkillBuilder()
 sb.add_request_handler(SessionEndedRequestHandler())
@@ -17,16 +18,10 @@ sb.add_request_handler(LaunchRequestHandler())
 sb.add_exception_handler(CatchAllExceptionHandler())
 
 # custom handler
-dishes = parse_xml("https://app.hs-mittweida.de/speiseplan/all")
-assert len(dishes) > 0
-assert dishes is not None
-day_intent_handler = DayIntentHandler()
-day_and_category_intent_handler = DayAndCategoryIntentHandler()
+context = Context("https://app.hs-mittweida.de/speiseplan/all")
 
-day_intent_handler.set_dishes(dishes)
-day_and_category_intent_handler.set_dishes(dishes)
+day_intent_handler = DayIntentHandler()
 
 sb.add_request_handler(day_intent_handler)
-sb.add_request_handler(day_and_category_intent_handler)
 
 handler = sb.lambda_handler()

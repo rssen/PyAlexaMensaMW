@@ -1,5 +1,4 @@
 from enum import Enum
-from typing import Sequence
 
 from handler.xml_parser import parse_xml
 
@@ -23,5 +22,3 @@ class Context(Borg):
         if menu_url is not None:
             self.dishes = parse_xml(menu_url)
         self.localization = localization
-
-
