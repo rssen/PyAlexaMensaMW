@@ -15,6 +15,9 @@ class Dish:
     additives: Tuple[str]
     prices: Sequence["Dish.Price"]
 
+    def __post_init__(self):
+        self.description = self.description[:self.description.index("(")]
+
     @dataclass
     class Price:
         category: str
