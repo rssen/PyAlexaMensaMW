@@ -1,5 +1,5 @@
-from dataclasses import dataclass
-from typing import Sequence, Tuple, Mapping, List, Dict
+from dish import Dish
+from typing import Sequence, List, Dict
 from datetime import datetime
 from xml.sax import SAXParseException
 from untangle import parse
@@ -57,20 +57,4 @@ def parse_xml(url: str) -> Sequence["Dish"]:
     return dishes
 
 
-@dataclass
-class Dish:
-    # pylint: disable=too-many-instance-attributes
-    day: datetime.date
-    category: str
-    description: str
-    price_category: str
-    available: bool
-    ingredients: Mapping[str, bool]
-    additives: Tuple[str]
-    prices: Sequence["Dish.Price"]
 
-    @dataclass
-    class Price:
-        category: str
-        value: float
-        label: str
