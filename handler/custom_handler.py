@@ -58,64 +58,42 @@ def _sort_dishes_by_category(dishes: List[Dish]) -> Dict[str, List[Dish]]:
 
 
 class DayIntentHandler(AbstractRequestHandler):
-    def __init__(self) -> None:
-        self.dishes_at_date: List[Dish] = []
-
     def can_handle(self, handler_input: HandlerInput) -> bool:
         return is_intent_name("DayIntent")(handler_input)
 
     def handle(self, handler_input: HandlerInput) -> Response:
         resolved_slot_values = _resolve_slots(handler_input, ["day"])
         requested_date = datetime.strptime(resolved_slot_values["day"], "%Y-%m-%d")
-        self.dishes_at_date = [dish for dish in context.dishes if dish.day == requested_date.date()]
-        sorted_dishes = _sort_dishes_by_category(self.dishes_at_date)
-        output = speech_output.speak_categories(sorted_dishes)
+        dishes_at_date = [dish for dish in context.dishes if dish.day == requested_date.date()]
+        if not dishes_at_date:
+            sorted_dishes = _sort_dishes_by_category(dishes_at_date)
+            output = speech_output.speak_categories(sorted_dishes)
+        else:
+            output = speech_output.no_dishes_found_at_date(requested_date)
         handler_input.response_builder.speak(output)
         return handler_input.response_builder.response
 
 
-# pylint: disable=pointless-string-statement
-"""class DayAndCategoryIntentHandler(AbstractRequestHandler):
-
-    dishes: Sequence[Dish]
-
+class DayAndCategoryIntentHandler(AbstractRequestHandler):
     def can_handle(self, handler_input: HandlerInput) -> bool:
         return is_intent_name("DayAndCategoryIntent")(handler_input)
 
     def handle(self, handler_input: HandlerInput) -> Response:
-
-        # get slot value
-        day_slot = get_slot(handler_input=handler_input, slot_name="day")
-        resolved_day = get_slot(slot=day_slot, resolution_authority_name="TAG")
-
-        next_week_slot: Optional[str] = get_slot_value(
-            handler_input=handler_input, slot_name="next_week"
-        )
-        is_next_week_slot = next_week_slot is not None
-
-        category_slot = get_slot(handler_input=handler_input, slot_name="category")
-        resolved_category = __get_resolved_slot_value(
-            slot=category_slot, resolution_authority_name="KATEGORIE"
-        )
-
-        requested_date = get_date(resolved_day, is_next_week_slot)
+        resolved_slot_values = _resolve_slots(handler_input, ["day", "category"])
+        requested_date = datetime.strptime(resolved_slot_values["day"], "%Y-%m-%d")
+        requested_category = resolved_slot_values["category"]
 
         dishes_for_category_and_date = [
             dish
-            for dish in self.dishes
-            if dish.day == requested_date and dish.category == resolved_category
+            for dish in context.dishes
+            if dish.day == requested_date.date() and dish.category == requested_category
         ]
-
         if not dishes_for_category_and_date:
-            speech_output = (
-                f"{resolved_day} gibt es kein Essen in der Mensa. "
-                f"Die Mensa hat am Wochenende und an Feiertagen geschlossen."
-            )
+            output = speech_output.no_dishes_found_in_category(requested_date, requested_category)
         else:
-            speech_output = get_list_speech_output(dishes_for_category_and_date)
+            output = speech_output.speak_categories(
+                {requested_category: dishes_for_category_and_date}
+            )
 
-        handler_input.response_builder.speak(speech_output)
+        handler_input.response_builder.speak(output)
         return handler_input.response_builder.response
-
-    def set_dishes(self, dishes: Sequence[Dish]):
-        self.dishes = dishes"""

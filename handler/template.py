@@ -4,12 +4,13 @@ from random import randint
 from string import Template
 from typing import Dict
 
+from handler.context import Localization
 from handler.error import Location, Severity, SkillException
 from handler.logger import log_exception
 
 
-def template_factory(language: str) -> "AbstractOutputTemplate":
-    if language == "german":
+def template_factory(language: Localization) -> "AbstractOutputTemplate":
+    if language == Localization.GERMAN:
         return GermanOutputTemplate()
 
     log_exception(
