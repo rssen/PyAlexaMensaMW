@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date
 from typing import Mapping, Sequence, Tuple
 
 
 @dataclass
 class Dish:
     # pylint: disable=too-many-instance-attributes
-    day: datetime.date
+    day: date
     category: str
     description: str
     price_category: str
@@ -15,7 +15,7 @@ class Dish:
     additives: Tuple[str]
     prices: Sequence["Dish.Price"]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.description = self.description[: self.description.index("(")]
 
     @dataclass

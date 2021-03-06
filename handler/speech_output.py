@@ -9,12 +9,12 @@ context = Context()
 templates = template_factory(context.localization.value)
 
 
-def no_dishes_found_at_date(requested_date: date):
-    templates.get_error_no_dishes_at_date().substitute(requested_date=requested_date)
+def no_dishes_found_at_date(requested_date: date) -> str:
+    return templates.get_error_no_dishes_at_date().substitute(requested_date=requested_date)
 
 
-def no_dishes_found_in_category(requested_date: date, category: str):
-    templates.get_error_category_empty_at_date().substitute(
+def no_dishes_found_in_category(requested_date: date, category: str) -> str:
+    return templates.get_error_category_empty_at_date().substitute(
         category=category, requested_date=requested_date
     )
 
