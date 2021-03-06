@@ -11,8 +11,9 @@ class Borg:
 
 
 class Context(Borg):
+    dishes = None
 
-    def __init__(self, dishes=None):
+    def __init__(self, menu_url: str = None):
         Borg.__init__(self)
-        if dishes is not None:
-            self.dishes = dishes
+        if menu_url is not None:
+            self.dishes = parse_xml(menu_url)
