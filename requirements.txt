@@ -1,8 +1,5 @@
-untangle~=1.1.1
-certifi~=2020.4.5.1
-chardet~=3.0.4
-urllib3~=1.25.9
-six~=1.14.0
-python-dateutil~=2.8.1
-idna~=2.9
-requests~=2.23.0
+ask-sdk
+untangle
+mypy
+black
+pylint
