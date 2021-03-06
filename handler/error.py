@@ -3,8 +3,11 @@ from enum import Enum
 
 class SkillException(Exception):
     def __init__(self, message: str, severity: "Severity", location: "Location"):
-        msg = f"error: severity->{severity.name.lower()} location->{location.name.lower()} msg->{message}"
-        super().__init__(msg)
+        self.msg = f"error: severity->{severity.name.lower()} location->{location.name.lower()} msg->{message}"
+        super().__init__(self.msg)
+
+    def __str__(self) -> str:
+        return self.msg
 
 
 class Severity(Enum):
