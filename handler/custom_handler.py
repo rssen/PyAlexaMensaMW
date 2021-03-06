@@ -62,6 +62,7 @@ class DayIntentHandler(AbstractRequestHandler):
         self.dishes_at_date = [dish for dish in context.dishes if dish.day == requested_date.date()]
         sorted_dishes = _sort_dishes_by_category(self.dishes_at_date)
         output = speech_output.speak_categories(sorted_dishes)
+        print(output)
         handler_input.response_builder.speak(output)
         return handler_input.response_builder.response
 

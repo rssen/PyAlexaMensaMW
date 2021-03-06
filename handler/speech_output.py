@@ -24,15 +24,16 @@ def speak_dish_list(dishes: List[Dish]) -> str:
     return __connect(descriptions)
 
 
-def speak_categories(category_dishes: Dict[str, List[Dish]]):
-    output_categories = []
-    for category_name, dishes in category_dishes.values():
+def speak_categories(category_dishes: Dict[str, List[Dish]]) -> str:
+    output_categories: List[str] = []
+    for category_name, dishes in category_dishes.items():
         dishes_phrase = speak_dish_list(dishes)
         output = templates.get_category_phrase().substitute(
             category_name=category_name, dishes=dishes_phrase
         )
         output_categories.append(output)
-    return output_categories
+    joined_output = str.join(" ", output_categories)
+    return joined_output.replace("&", "und")
 
 
 def __connect(phrases: List[str]) -> str:
