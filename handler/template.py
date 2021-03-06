@@ -23,7 +23,7 @@ def template_factory(language: str) -> "AbstractOutputTemplate":
 
 
 class AbstractOutputTemplate(metaclass=ABCMeta):
-    def __init__(self):
+    def __init__(self) -> None:
         self.__last_phrase_index = 0
         self.__elements: Dict[int, int] = {}
 
@@ -67,9 +67,6 @@ class AbstractOutputTemplate(metaclass=ABCMeta):
 
 
 class GermanOutputTemplate(AbstractOutputTemplate):
-    def __init__(self):
-        super().__init__()
-
     def get_connection_phrase(self) -> Template:
         connection_word = [
             Template("${phrase_1} und ${phrase_2}"),

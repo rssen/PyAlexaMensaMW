@@ -1,5 +1,7 @@
 from enum import Enum
+from typing import Dict, Any, Sequence
 
+from handler.dish import Dish
 from handler.xml_parser import parse_xml
 
 
@@ -8,14 +10,14 @@ class Localization(Enum):
 
 
 class Borg:
-    _shared_state = {}
+    _shared_state: Dict[str, Any] = {}
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.__dict__ = self._shared_state
 
 
 class Context(Borg):
-    dishes = None
+    dishes: Sequence[Dish] = []
 
     def __init__(self, menu_url: str = None, localization: Localization = Localization.GERMAN):
         Borg.__init__(self)

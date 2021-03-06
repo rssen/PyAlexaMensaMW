@@ -1,11 +1,12 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
 from ask_sdk_core.handler_input import HandlerInput
 from ask_sdk_core.skill_builder import SkillBuilder
 from ask_sdk_core.utils import get_slot, is_intent_name
 from ask_sdk_model import Response, Slot
+from ask_sdk_model.slu.entityresolution import Value
 
 import handler.speech_output as speech_output
 from handler.context import Context
@@ -15,27 +16,34 @@ sb = SkillBuilder()
 context = Context()
 
 
+# pylint: disable=too-many-nested-blocks
 def _resolve_slots(handler_input: HandlerInput, slot_names: List[str]) -> Dict[str, str]:
     resolved: Dict[str, str] = {}
-    slot_value: Slot
+    slot_value: Optional[Slot]
     for slot_name in slot_names:
         # if slot not exists, None is returned by get_slot()
         slot_value = get_slot(handler_input, slot_name)
         if slot_value is None:
             resolved[slot_name] = ""
+        assert slot_value is not None
 
         # resolutions exists for custom slot types and extended standard slot types
         # authority is the name of the defined slot type
         slot_resolutions = slot_value.resolutions
         if slot_resolutions is not None:
-            for resolution_authority in slot_resolutions.resolutions_per_authority:
+            for resolution_authority in slot_resolutions.resolutions_per_authority:  # type: ignore
                 if resolution_authority.authority == slot_name:
-                    resolved[slot_name] = resolution_authority.values[0].value.name
+                    res_value = resolution_authority.values[0].value  # type: ignore
+                    if isinstance(res_value, Value):
+                        if isinstance(res_value.name, str):
+                            resolved[slot_name] = res_value.name
+                    else:
+                        resolved[slot_name] = ""
                     break
             else:
-                resolved[slot_name] = slot_value.value
+                resolved[slot_name] = slot_value.value or ""
         else:
-            resolved[slot_name] = slot_value.value
+            resolved[slot_name] = slot_value.value or ""
     return resolved
 
 
@@ -50,7 +58,7 @@ def _sort_dishes_by_category(dishes: List[Dish]) -> Dict[str, List[Dish]]:
 
 
 class DayIntentHandler(AbstractRequestHandler):
-    def __init__(self):
+    def __init__(self) -> None:
         self.dishes_at_date: List[Dish] = []
 
     def can_handle(self, handler_input: HandlerInput) -> bool:
@@ -66,6 +74,7 @@ class DayIntentHandler(AbstractRequestHandler):
         return handler_input.response_builder.response
 
 
+# pylint: disable=pointless-string-statement
 """class DayAndCategoryIntentHandler(AbstractRequestHandler):
 
     dishes: Sequence[Dish]
