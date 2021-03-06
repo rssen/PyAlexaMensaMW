@@ -23,6 +23,10 @@ class AbstractOutputTemplate(metaclass=ABCMeta):
         self.__elements: Dict[int, int] = {}
 
     @abc.abstractmethod
+    def get_connection_phrase(self) -> Template:
+        pass
+
+    @abc.abstractmethod
     def get_category_phrase(self) -> Template:
         pass
 
@@ -60,6 +64,15 @@ class GermanOutputTemplate(AbstractOutputTemplate):
 
     def __init__(self):
         super().__init__()
+
+    def get_connection_phrase(self) -> Template:
+        connection_word = [
+            Template("${phrase_1} und ${phrase_2}"),
+            Template("${phrase_1} sowie ${phrase_2}"),
+            Template("sowohl ${phrase_1} als auch ${phrase_2}"),
+        ]
+        random_index = self._get_random_element(len(connection_word))
+        return connection_word[random_index]
 
     def get_category_phrase(self) -> Template:
         category_intro = [
