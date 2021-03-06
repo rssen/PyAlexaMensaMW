@@ -1,8 +1,10 @@
-from dish import Dish
-from typing import Sequence, List, Dict
 from datetime import datetime
+from typing import Dict, List, Sequence
 from xml.sax import SAXParseException
+
 from untangle import parse
+
+from handler.dish import Dish
 
 
 def parse_xml(url: str) -> Sequence["Dish"]:
@@ -55,6 +57,3 @@ def parse_xml(url: str) -> Sequence["Dish"]:
                 )
             )
     return dishes
-
-
-
