@@ -18,6 +18,7 @@ class Dish:
     def __post_init__(self) -> None:
         self.description = self.description[: self.description.index("(")]
         self.category = self.category.lower()
+        self.category = self.category.replace("&", "und")
 
     @dataclass
     class Price:

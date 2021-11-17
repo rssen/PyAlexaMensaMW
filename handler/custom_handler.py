@@ -1,4 +1,5 @@
 from datetime import datetime
+
 from typing import Dict, List, Optional
 
 from ask_sdk_core.dispatch_components import AbstractRequestHandler
@@ -8,7 +9,7 @@ from ask_sdk_core.utils import get_slot, is_intent_name
 from ask_sdk_model import Response, Slot
 from ask_sdk_model.slu.entityresolution import Value
 
-import handler.speech_output as speech_output
+from handler import speech_output
 from handler.context import Context
 from handler.dish import Dish
 
@@ -65,11 +66,12 @@ class DayIntentHandler(AbstractRequestHandler):
         resolved_slot_values = _resolve_slots(handler_input, ["day"])
         requested_date = datetime.strptime(resolved_slot_values["day"], "%Y-%m-%d")
         dishes_at_date = [dish for dish in context.dishes if dish.day == requested_date.date()]
-        if not dishes_at_date:
+
+        if len(dishes_at_date) > 0:
             sorted_dishes = _sort_dishes_by_category(dishes_at_date)
             output = speech_output.speak_categories(sorted_dishes)
         else:
-            output = speech_output.no_dishes_found_at_date(requested_date)
+            output = speech_output.no_dishes_found_at_date(resolved_slot_values["day"])
         handler_input.response_builder.speak(output)
         return handler_input.response_builder.response
 
@@ -88,11 +90,13 @@ class DayAndCategoryIntentHandler(AbstractRequestHandler):
             for dish in context.dishes
             if dish.day == requested_date.date() and dish.category == requested_category
         ]
-        if not dishes_for_category_and_date:
-            output = speech_output.no_dishes_found_in_category(requested_date, requested_category)
-        else:
+        if len(dishes_for_category_and_date) > 0:
             output = speech_output.speak_categories(
                 {requested_category: dishes_for_category_and_date}
+            )
+        else:
+            output = speech_output.no_dishes_found_in_category(
+                resolved_slot_values["day"], requested_category
             )
 
         handler_input.response_builder.speak(output)

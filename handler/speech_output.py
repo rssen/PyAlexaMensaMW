@@ -1,4 +1,3 @@
-from datetime import date
 from typing import Dict, List
 
 from handler.context import Context
@@ -9,11 +8,11 @@ context = Context()
 templates = template_factory(context.localization)
 
 
-def no_dishes_found_at_date(requested_date: date) -> str:
+def no_dishes_found_at_date(requested_date: str) -> str:
     return templates.get_error_no_dishes_at_date().substitute(requested_date=requested_date)
 
 
-def no_dishes_found_in_category(requested_date: date, category: str) -> str:
+def no_dishes_found_in_category(requested_date: str, category: str) -> str:
     return templates.get_error_category_empty_at_date().substitute(
         category=category, requested_date=requested_date
     )
