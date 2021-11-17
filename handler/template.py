@@ -25,7 +25,6 @@ def template_factory(language: Localization) -> "AbstractOutputTemplate":
 
 class AbstractOutputTemplate(metaclass=ABCMeta):
     def __init__(self) -> None:
-        self.__last_phrase_index = 0
         self.__elements: Dict[int, int] = {}
 
     @abc.abstractmethod
@@ -56,7 +55,7 @@ class AbstractOutputTemplate(metaclass=ABCMeta):
         if list_length == 1:
             return 0
 
-        if list_length in self.__elements.keys():
+        if list_length in self.__elements:
             prev_length = self.__elements[list_length]
             while random_index := randint(0, list_length - 1):
                 if not prev_length == random_index:
